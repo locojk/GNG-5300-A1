@@ -62,10 +62,24 @@ class PhoneBook:
     def sort(self, by='last_name'):
         return sorted(self.contacts, key=lambda x: getattr(x, by))
 
+    def group_by(self, by='last_name'):
+        groups = {}
+        for contact in self.contacts:
+            key = getattr(contact, by)
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(contact)
+        return groups
+
     @staticmethod
-    def log(operation, contact):
+    def log(operation, contact=None):
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         with open('phonebook.log', 'a') as log_file:
-            log_file.write(f'{operation} performed on {contact.first_name} {contact.last_name}\n')
+            if contact is None:
+                log_file.write(f'[{timestamp}] {operation} performed\n')
+            else:
+                log_file.write(f'[{timestamp}] {operation} performed on {contact.first_name} {contact.last_name}\n')
 
     @staticmethod
     def get_history():

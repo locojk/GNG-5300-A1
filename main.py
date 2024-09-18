@@ -6,7 +6,7 @@ from phoneBook import PhoneBook
 from contact import Contact
 
 def display_menu():
-    print("Phone Book Application, please select an option by type the related number:")
+    print("\nPhone Book Application, please select an option by type the related number:")
     print("1. Add Contact")
     print("2. View Contacts")
     print("3. Search Contacts")
@@ -23,124 +23,157 @@ def input_phone_number():
     phone = input("Phone number: ")
     return f"({phone[:3]}) {phone[3:6]}-{phone[6:]}"
 
+
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
 def add_contact(phone_book):
-    print("Please chose the add method")
-    print("1. Add contact individually")
-    print("2. Add contact from CSV file")
 
-    input_choice = input("Enter your choice: ")
-    if input_choice == "1":
-        add_contact(phone_book)
-    elif input_choice == "2":
-        import_contacts(phone_book)
-    else:
-        print("Invalid choice, please try again.")
+    while True:
+        print("Please chose the add method")
+        print("1. Add contact individually")
+        print("2. Add contact from CSV file")
 
-    if input_choice == "1":
-        first_name = input("First Name: ")
-        last_name = input("Last Name: ")
+        input_choice = input("Enter your choice: ")
 
-        phone = input_phone_number()
+        if input_choice == "1":
+            first_name = input("First Name: ")
+            last_name = input("Last Name: ")
 
-        while not validate_phone(phone):
-            print("Invalid phone number format. Please enter in the format (###) ###-####.")
             phone = input_phone_number()
 
-        email = input("Email (Optional): ")
+            while not validate_phone(phone):
+                print("Invalid phone number format. Please enter in the format (###) ###-####.")
+                phone = input_phone_number()
 
-        while email and not validate_email(email):
-            print("Invalid email format. Please enter a valid email address.")
             email = input("Email (Optional): ")
 
-        address = input("Address (Optional): ")
+            while email and not validate_email(email):
+                print("Invalid email format. Please enter a valid email address.")
+                email = input("Email (Optional): ")
 
-        contact = Contact(first_name, last_name, phone, email, address)
-        phone_book.add(contact)
+            address = input("Address (Optional): ")
 
-        phone_book.log("Add", contact)
-        print(f"Added contact {first_name} {last_name}.")
+            contact = Contact(first_name, last_name, phone, email, address)
+            phone_book.add(contact)
 
-    elif input_choice == "2":
+            phone_book.log("Add", contact)
+            print(f"Added contact {first_name} {last_name}.")
 
-        csv_file = input("Enter the path to the CSV file: ")
+            break
 
-        try:
-            # Read the CSV file into a DataFrame
-            df = pd.read_csv(csv_file)
+        elif input_choice == "2":
 
-            # Iterate through the DataFrame rows
-            for index, row in df.iterrows():
-                # Ensure required columns are present
+            csv_file = input("Enter the path to the CSV file: ")
+
+            try:
+                # Read the CSV file into a DataFrame
+                df = pd.read_csv(csv_file)
+
                 if 'First Name' in df.columns and 'Last Name' in df.columns and 'Phone' in df.columns:
-                    contact = Contact(row['First Name'], row['Last Name'], row['Phone'], row.get('Email', None),
-                                      row.get('Address', None))
-                    phone_book.add(contact)
-                    phone_book.log("Add", contact)
-                    print(f"Added contact {row['First Name']} {row['Last Name']}.")
-                else:
-                    print(f"Skipping, missing required fields")
+                    # Iterate through the DataFrame rows
+                    for index, row in df.iterrows():
+                        # Validate phone number
+                        phone = row['Phone']
+                        if not validate_phone(phone):
+                            print(f"Invalid phone number format in row.")
+                            return  # Stop further processing
 
-        except FileNotFoundError:
-            print(f"File {csv_file} not found.")
-        except pd.errors.EmptyDataError:
-            print("The CSV file is empty.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+                        # Validate email if provided
+                        email = row.get('Email', None)
+                        if email and not validate_email(email):
+                            print(f"Invalid email format in row.")
+                            return  # Stop further processing
 
-    else:
-        print("Invalid choice, please try again.")
+                        # Create the contact and add it to the phone book
+                        contact = Contact(row['First Name'], row['Last Name'], phone, email, row.get('Address', None))
+                        phone_book.add(contact)
+                        phone_book.log("Add", contact)
+                        print(f"Added contact {row['First Name']} {row['Last Name']}.")
+
+                break
+
+            except FileNotFoundError:
+                print(f"File {csv_file} not found.")
+            except pd.errors.EmptyDataError:
+                print("The CSV file is empty.")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+        else:
+            print("\nInvalid choice, please try again.\n")
+
 
 def view_contacts(phone_book):
     contacts = phone_book.sort()
-    for contact in contacts:
-        print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}, Email: {contact.email}")
 
-def search_contacts(phone_book):
-    print("Please chose the search method")
-    print("1. Search by name")
-    print("2. Search by phone number")
-    print("3. Search by date range")
-
-    input_choice = input("Enter your choice: ")
-    if input_choice == "1":
-        query = input("Enter the name to search: ")
-        results = phone_book.search_by_name(query)
-    elif input_choice == "2":
-        query = input("Enter the phone number to search: ")
-        results = phone_book.search_by_phone(query)
-    elif input_choice == "3":
-        start_date = input("Enter the start date (YYYY-MM-DD): ")
-        end_date = input("Enter the end date (YYYY-MM-DD): ")
-        results = phone_book.search_by_timeframe(start_date, end_date)
-    else:
-        print("Invalid choice, please try again.")
+    if not contacts:
+        print("No contacts found.")
         return
 
-    for contact in results:
-        print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
+    for contact in contacts:
+        print(f"{contact.first_name} {contact.last_name} \nPhone: {contact.phone} \nEmail: {contact.email}\n")
+
+    phone_book.log("View")
+
+def search_contacts(phone_book):
+
+    while True:
+        print("Please chose the search method")
+        print("1. Search by name")
+        print("2. Search by phone number")
+        print("3. Search by date range")
+
+        input_choice = input("Enter your choice: ")
+        if input_choice == "1":
+            query = input("Enter the name to search: ")
+            results = phone_book.search_by_name(query)
+            if not results:
+                print("No contacts found.")
+            for contact in results:
+                print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
+                phone_book.log("Search", contact)
+            break
+        elif input_choice == "2":
+            query = input_phone_number()
+            results = phone_book.search_by_phone(query)
+            if not results:
+                print("No contacts found.")
+            for contact in results:
+                print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
+                phone_book.log("Search", contact)
+            break
+        elif input_choice == "3":
+            start_date = input("Enter the start date (YYYY-MM-DD): ")
+            end_date = input("Enter the end date (YYYY-MM-DD): ")
+            results = phone_book.search_by_timeframe(start_date, end_date)
+            if not results:
+                print("No contacts found.")
+            for contact in results:
+                print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
+                phone_book.log("Search", contact)
+            break
+        else:
+            print("Invalid choice, please try again.")
 
 def update_contact(phone_book):
     phone = input("Enter phone number of the contact to update: ")
+    contact = phone_book.search_by_phone(phone)
     first_name = input("New First Name (or leave blank to keep current): ")
     last_name = input("New Last Name (or leave blank to keep current): ")
     email = input("New Email (or leave blank to keep current): ")
     address = input("New Address (or leave blank to keep current): ")
     phone_book.update(phone, first_name, last_name, email, address)
+    phone_book.log("Update", contact)
     print(f"Contact with phone number {phone} updated.")
 
 def delete_contact(phone_book):
     phone = input("Enter phone number of the contact to delete: ")
+    contact = phone_book.search_by_phone(phone)
     phone_book.delete(phone)
+    phone_book.log("Delete", contact)
     print(f"Deleted contact with phone number {phone}.")
-
-def import_contacts(phone_book):
-    csv_file = input("Enter the path to the CSV file: ")
-    phone_book.add_from_csv(csv_file)
-    print("Contacts imported successfully.")
 
 def view_audit_history(phone_book):
     history = phone_book.get_history()
@@ -151,25 +184,32 @@ def main():
     phone_book = PhoneBook()
 
     while True:
-        display_menu()
-        choice = input("Enter your choice: ")
+        try:
+            display_menu()
+            choice = input("Enter your choice: ")
 
-        if choice == "1":
-            add_contact(phone_book)
-        elif choice == "2":
-            view_contacts(phone_book)
-        elif choice == "3":
-            search_contacts(phone_book)
-        elif choice == "4":
-            update_contact(phone_book)
-        elif choice == "5":
-            delete_contact(phone_book)
-        elif choice == "6":
-            view_audit_history(phone_book)
-        elif choice == "7":
-            sys.exit()
-        else:
-            print("Invalid choice, please try again.")
+            if choice == "1":
+                add_contact(phone_book)
+            elif choice == "2":
+                view_contacts(phone_book)
+            elif choice == "3":
+                search_contacts(phone_book)
+            elif choice == "4":
+                update_contact(phone_book)
+            elif choice == "5":
+                delete_contact(phone_book)
+            elif choice == "6":
+                view_audit_history(phone_book)
+            elif choice == "7":
+                sys.exit()
+            else:
+                print("Invalid choice, please try again.")
+
+            print("\nEnter any key to continue...")
+            input()
+
+        except Exception as e:
+            print(f"\nAn error occurred: {e}, please try again.")
 
 if __name__ == "__main__":
     main()
