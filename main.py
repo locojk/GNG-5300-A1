@@ -1,12 +1,18 @@
 import sys
+# Regular expression library for validating
 import re
+# Pandas library for reading CSV files
 import pandas as pd
 
 from phoneBook import PhoneBook
 from contact import Contact
 
+
 def display_menu():
-    print("\nPhone Book Application, please select an option by type the related number:")
+    """
+    Displays the main menu with options for the user to select an action.
+    """
+    print("\nPhone Book Application, please select an option by typing the related number:")
     print("1. Add Contact")
     print("2. View Contacts")
     print("3. Search Contacts")
@@ -15,23 +21,67 @@ def display_menu():
     print("6. View Audit History")
     print("7. Quit")
 
+
 def validate_phone(phone):
+    """
+    Validates a phone number based on the pattern (###) ###-####.
+
+    Parameters:
+    -----------
+    phone : str
+        The phone number to be validated.
+
+    Returns:
+    --------
+    bool
+        True if the phone number matches the pattern, False otherwise.
+    """
     pattern = r'^\(\d{3}\) \d{3}-\d{4}$'
     return re.match(pattern, phone) is not None
 
+
 def input_phone_number():
+    """
+    Takes raw phone number input and formats it as (###) ###-####.
+
+    Returns:
+    --------
+    str
+        The formatted phone number.
+    """
     phone = input("Phone number: ")
     return f"({phone[:3]}) {phone[3:6]}-{phone[6:]}"
 
 
 def validate_email(email):
+    """
+    Validates an email address using a basic regex pattern.
+
+    Parameters:
+    -----------
+    email : str
+        The email to be validated.
+
+    Returns:
+    --------
+    bool
+        True if the email matches the pattern, False otherwise.
+    """
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
-def add_contact(phone_book):
 
+def add_contact(phone_book):
+    """
+    Adds a new contact either individually or by importing from a CSV file.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book where the contact will be added.
+    """
     while True:
-        print("Please chose the add method")
+        print("Please choose the add method")
         print("1. Add contact individually")
         print("2. Add contact from CSV file")
 
@@ -64,7 +114,6 @@ def add_contact(phone_book):
             break
 
         elif input_choice == "2":
-
             csv_file = input("Enter the path to the CSV file: ")
 
             try:
@@ -106,6 +155,14 @@ def add_contact(phone_book):
 
 
 def view_contacts(phone_book):
+    """
+    Displays all contacts in the phone book, sorted alphabetically by last name.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book containing the contacts to display.
+    """
     contacts = phone_book.sort()
 
     if not contacts:
@@ -117,15 +174,24 @@ def view_contacts(phone_book):
 
     phone_book.log("View")
 
-def search_contacts(phone_book):
 
+def search_contacts(phone_book):
+    """
+    Allows searching for contacts by name, phone number, or date range.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book to search in.
+    """
     while True:
-        print("Please chose the search method")
+        print("Please choose the search method")
         print("1. Search by name")
         print("2. Search by phone number")
         print("3. Search by date range")
 
         input_choice = input("Enter your choice: ")
+
         if input_choice == "1":
             query = input("Enter the name to search: ")
             results = phone_book.search_by_name(query)
@@ -157,7 +223,16 @@ def search_contacts(phone_book):
         else:
             print("Invalid choice, please try again.")
 
+
 def update_contact(phone_book):
+    """
+    Updates a contact's details based on phone number.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book containing the contact to update.
+    """
     phone = input("Enter phone number of the contact to update: ")
     contact = phone_book.search_by_phone(phone)
     first_name = input("New First Name (or leave blank to keep current): ")
@@ -168,19 +243,42 @@ def update_contact(phone_book):
     phone_book.log("Update", contact)
     print(f"Contact with phone number {phone} updated.")
 
+
 def delete_contact(phone_book):
+    """
+    Deletes a contact from the phone book by phone number.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book containing the contact to delete.
+    """
     phone = input("Enter phone number of the contact to delete: ")
     contact = phone_book.search_by_phone(phone)
     phone_book.delete(phone)
     phone_book.log("Delete", contact)
     print(f"Deleted contact with phone number {phone}.")
 
+
 def view_audit_history(phone_book):
+    """
+    Displays the audit history of operations performed on the phone book.
+
+    Parameters:
+    -----------
+    phone_book : PhoneBook
+        The phone book whose audit history is to be displayed.
+    """
     history = phone_book.get_history()
     for log in history:
         print(log)
 
+
 def main():
+    """
+    The main function that runs the phone book application, allowing users to perform operations
+    like adding, viewing, searching, updating, and deleting contacts.
+    """
     phone_book = PhoneBook()
 
     while True:
@@ -211,6 +309,6 @@ def main():
         except Exception as e:
             print(f"\nAn error occurred: {e}, please try again.")
 
+# Run the main function
 if __name__ == "__main__":
     main()
-
