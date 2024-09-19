@@ -1,12 +1,12 @@
 import sys
 # Regular expression library for validating
 import re
+
 # Pandas library for reading CSV files
 import pandas as pd
 
 from phoneBook import PhoneBook
 from contact import Contact
-
 
 def display_menu():
     """
@@ -39,20 +39,6 @@ def validate_phone(phone):
     pattern = r'^\(\d{3}\) \d{3}-\d{4}$'
     return re.match(pattern, phone) is not None
 
-
-def input_phone_number():
-    """
-    Takes raw phone number input and formats it as (###) ###-####.
-
-    Returns:
-    --------
-    str
-        The formatted phone number.
-    """
-    phone = input("Phone number: ")
-    return f"({phone[:3]}) {phone[3:6]}-{phone[6:]}"
-
-
 def validate_email(email):
     """
     Validates an email address using a basic regex pattern.
@@ -70,7 +56,6 @@ def validate_email(email):
     pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(pattern, email) is not None
 
-
 def add_contact(phone_book):
     """
     Adds a new contact either individually or by importing from a CSV file.
@@ -80,6 +65,8 @@ def add_contact(phone_book):
     phone_book : PhoneBook
         The phone book where the contact will be added.
     """
+
+    # Loop until a valid choice is made
     while True:
         print("Please choose the add method")
         print("1. Add contact individually")
@@ -87,15 +74,25 @@ def add_contact(phone_book):
 
         input_choice = input("Enter your choice: ")
 
+        # Add contact individually if choice is 1
         if input_choice == "1":
             first_name = input("First Name: ")
             last_name = input("Last Name: ")
 
-            phone = input_phone_number()
+            # Ensure phone number is unique and valid
+            while True:
+                phone = input("Phone (###) ###-####: ")
 
-            while not validate_phone(phone):
-                print("Invalid phone number format. Please enter in the format (###) ###-####.")
-                phone = input_phone_number()
+                if not validate_phone(phone):
+                    print("Invalid phone number format. Please enter in the format (###) ###-####.")
+                    continue
+
+                # Check if the phone number is already in use
+                existing_contacts = phone_book.search_by_phone(phone)
+                if existing_contacts:
+                    print("This phone number is already in use. Please enter a different phone number.")
+                else:
+                    break  # Phone number is valid and unique
 
             email = input("Email (Optional): ")
 
@@ -113,6 +110,7 @@ def add_contact(phone_book):
 
             break
 
+        # Add contacts from a CSV file if choice is 2
         elif input_choice == "2":
             csv_file = input("Enter the path to the CSV file: ")
 
@@ -126,14 +124,20 @@ def add_contact(phone_book):
                         # Validate phone number
                         phone = row['Phone']
                         if not validate_phone(phone):
-                            print(f"Invalid phone number format in row.")
-                            return  # Stop further processing
+                            print(f"Invalid phone number format exist.")
+                            break
+
+                        # Check if the phone number is already in use
+                        existing_contacts = phone_book.search_by_phone(phone)
+                        if existing_contacts:
+                            print(f"Phone number {phone} is already in use.")
+                            break
 
                         # Validate email if provided
                         email = row.get('Email', None)
                         if email and not validate_email(email):
-                            print(f"Invalid email format in row.")
-                            return  # Stop further processing
+                            print(f"Invalid email format exist.")
+                            break
 
                         # Create the contact and add it to the phone book
                         contact = Contact(row['First Name'], row['Last Name'], phone, email, row.get('Address', None))
@@ -154,6 +158,7 @@ def add_contact(phone_book):
             print("\nInvalid choice, please try again.\n")
 
 
+
 def view_contacts(phone_book):
     """
     Displays all contacts in the phone book, sorted alphabetically by last name.
@@ -170,7 +175,8 @@ def view_contacts(phone_book):
         return
 
     for contact in contacts:
-        print(f"{contact.first_name} {contact.last_name} \nPhone: {contact.phone} \nEmail: {contact.email}\n")
+        print(f"{contact.first_name} {contact.last_name} \nPhone: {contact.phone} \nEmail: {contact.email} "
+              f"\nAddress: {contact.address} \nTime Added: {contact.time_added}\n")
 
     phone_book.log("View")
 
@@ -184,6 +190,8 @@ def search_contacts(phone_book):
     phone_book : PhoneBook
         The phone book to search in.
     """
+
+    # Loop until a valid choice is made
     while True:
         print("Please choose the search method")
         print("1. Search by name")
@@ -192,6 +200,7 @@ def search_contacts(phone_book):
 
         input_choice = input("Enter your choice: ")
 
+        # Search by name if choice is 1
         if input_choice == "1":
             query = input("Enter the name to search: ")
             results = phone_book.search_by_name(query)
@@ -201,6 +210,7 @@ def search_contacts(phone_book):
                 print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
                 phone_book.log("Search", contact)
             break
+        # Search by phone number if choice is 2
         elif input_choice == "2":
             query = input_phone_number()
             results = phone_book.search_by_phone(query)
@@ -210,6 +220,8 @@ def search_contacts(phone_book):
                 print(f"{contact.first_name} {contact.last_name}, Phone: {contact.phone}")
                 phone_book.log("Search", contact)
             break
+
+        # Search by date range if choice is 3
         elif input_choice == "3":
             start_date = input("Enter the start date (YYYY-MM-DD): ")
             end_date = input("Enter the end date (YYYY-MM-DD): ")
@@ -234,15 +246,16 @@ def update_contact(phone_book):
         The phone book containing the contact to update.
     """
     phone = input("Enter phone number of the contact to update: ")
+
     contact = phone_book.search_by_phone(phone)
     first_name = input("New First Name (or leave blank to keep current): ")
     last_name = input("New Last Name (or leave blank to keep current): ")
     email = input("New Email (or leave blank to keep current): ")
     address = input("New Address (or leave blank to keep current): ")
     phone_book.update(phone, first_name, last_name, email, address)
+
     phone_book.log("Update", contact)
     print(f"Contact with phone number {phone} updated.")
-
 
 def delete_contact(phone_book):
     """
